@@ -7,6 +7,7 @@ class ImageEditor:
     def __init__(self, image_path):
         self.image_path = image_path
         tmp = Image.open(image_path)
+        # uh oh no handling for images with transparency :eyes:
         if tmp.mode == 'RGBA':
             self.image = self.pure_pil_alpha_to_color_v2(tmp)
         else:
@@ -27,19 +28,22 @@ class ImageEditor:
         background.paste(image, mask=image.split()[3])  # 3 is the alpha channel
         return background
 
-    def get_1d_pixel_map(self):
-        pixellist = []
-        for j in range(self.image.size[1]):
-            for i in range(self.image.size[0]):
-                pixellist.append(self.pixels[i, j])
-        return pixellist
-
     @staticmethod
     def convert_msg(message):
+        """Turns string into list of binary"""
         binary = ['{0:08b}'.format(ord(x), 'b') for x in message]
         return binary
 
+    def get_1d_pixel_map(self):
+        """Returns the pixels as a list of tuples rather than the 2d array because I found it easier to work with"""
+        pixel_list = []
+        for j in range(self.image.size[1]):
+            for i in range(self.image.size[0]):
+                pixel_list.append(self.pixels[i, j])
+        return pixel_list
+
     def encode(self, message):
+        """Main encoding function, adds message to image"""
         binary_msg = self.convert_msg(message)
         list_map = self.write_msg_to_1d(binary_msg)
         level_counter = -1
@@ -50,6 +54,7 @@ class ImageEditor:
             self.pixels[i, level_counter] = tuple(list_map[x])
 
     def write_msg_to_1d(self, binary):
+        """Writes the message to the pixels in a 1d array"""
         list_map = self.get_1d_pixel_map()
         for i in range(len(binary)):
             list_index = i * 3
@@ -60,9 +65,10 @@ class ImageEditor:
         return list_map
 
     def adjust(self, pixels, character, last):
+        """Adjusts a set of 3 pixels"""
         for i in range(0, 9):
-            pix = list(pixels[math.floor(i / 3)])
-            index = i % 3
+            pix = list(pixels[math.floor(i / 3)])  # 3 pixels so divides by 3 and rounds down to get index needed
+            index = i % 3  # index of the rg or b value
             if i == 8:
                 if pix[index] % 2 != 0 and not last:
                     pix[index] = self.alter_pixel(pix[index])
@@ -79,12 +85,14 @@ class ImageEditor:
 
     @staticmethod
     def alter_pixel(pixel):
+        """Makes value odd or even"""
         if pixel < 255:
             return pixel + 1
         else:
             return pixel - 1
 
     def extract_bin(self):
+        """Retrieves the binary version of the encoded message"""
         pixel_map = self.get_1d_pixel_map()
         msg = []
         for i in range(0, len(pixel_map), 3):
@@ -98,6 +106,7 @@ class ImageEditor:
                 return msg
 
     def extract_message(self):
+        """Converts binary message into an ascii string"""
         binary = self.extract_bin()
         msg = ""
         for character in binary:
@@ -106,4 +115,5 @@ class ImageEditor:
         return msg
 
     def save_changes(self, filename="out.png"):
+        """Made this a function as a handler"""
         self.image.save(filename)
