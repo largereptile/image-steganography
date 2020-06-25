@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script>
+async function encodePhoto(inp)
+{
+    let formData = new FormData();
+    let photo = inp.files[0];
+    let message = document.getElementById("encodeinput").value;
+
+    formData.append("file", photo);
+    formData.append("message", message);
+
+    try {
+       let r = await fetch('https://harru.club:5000/steganography/encode', {method: "POST", body: formData});
+       const content = await r.json();
+       console.log(content);
+       document.getElementById("encodeoutput").src = content.url
+    } catch(e) {
+       console.log('Huston we have problem...:', e);
+    }
+
+}
+async function decodePhoto(inp)
+{
+    let formData = new FormData();
+    let photo = inp.files[0];
+
+    formData.append("file", photo);
+
+    try {
+       let r = await fetch('https://harru.club:5000/steganography/decode', {method: "POST", body: formData});
+       const content = await r.json();
+       console.log(content);
+       document.getElementById("decodeoutput").innerHTML = content.message;
+    } catch(e) {
+       console.log('Huston we have problem...:', e);
+    }
+}
+
+</script>
+</head>
+<body>
+<h1>decode</h1>
+<input id="decode-file" type="file" onchange="decodePhoto(this)">
+<p id="decodeoutput"></p>
+
+<h1>encode</h1>
+<input id="encodeinput" type="text">
+<input id="encode-file" type="file" onchange="encodePhoto(this)">
+<img id="encodeoutput"></img>
+</body>
+</html>
